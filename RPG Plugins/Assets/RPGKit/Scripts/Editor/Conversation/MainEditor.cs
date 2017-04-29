@@ -105,9 +105,9 @@ public class MainEditor : EditorWindow
 		if (assetType == AssetType.character)
 			_character = conversationList.characters [characterIndex];
 
-		if (assetType == AssetType.story)
-			_character = conversationList.stories [0].chapters [0];
-
+		if (assetType == AssetType.story) {
+			_character = conversationList.stories [0].chapters [characterIndex];
+		}
 		//#here
 		FindTarget ();
 
@@ -155,8 +155,6 @@ public class MainEditor : EditorWindow
 
 					foreach (ConversationList.Chapters curChapter in curStory.chapters) {
 
-
-
 						curChapter.name = "Chapter";
 						if (GUILayout.Button (chapterIndex.ToString () + ":" + curChapter.name))
 							curChapter.isActive = !curChapter.isActive;
@@ -169,7 +167,7 @@ public class MainEditor : EditorWindow
 								if (otherChaps != curChapter)
 									otherChaps.isActive = false;
 							}
-
+				
 
 							DisplayConversationContent ();
 							GUILayout.BeginVertical ();
@@ -205,6 +203,10 @@ public class MainEditor : EditorWindow
 		}
 
 		EditorGUILayout.EndScrollView ();
+
+		if (GUI.changed) {
+			EditorUtility.SetDirty (conversationList);
+		}
 
 	}
 
@@ -250,8 +252,13 @@ public class MainEditor : EditorWindow
 		GUILayout.Space (20);
 		DisplayCharacterImages ();
 
-		EditorUtility.SetDirty (conversationList);
 
+
+	}
+
+	void OnSelectionChange ()
+	{
+		EditorUtility.SetDirty (conversationList);
 	}
 
 	public void DisplayCharacterImages ()
@@ -348,7 +355,8 @@ public class MainEditor : EditorWindow
 		_character.name = EditorGUILayout.TextField (_character.name);
 
 		GUILayout.EndHorizontal ();
-		//_character.assetType = (AssetType)EditorGUILayout.EnumPopup ("Asset Type", _character.assetType);
+
+
 
 		/*
 		if (conversationList.characters.Count == 1) {
@@ -475,10 +483,8 @@ public class MainEditor : EditorWindow
 
 				_character.conversations [i].name = EditorGUILayout.TextField (_character.conversations [i].name);
 
-
-
-				if (_character.playType == PlayType.byEvent) {
-					string[] characterStrings = GetCharacterStrings (conversationList.chapters, false, AssetType.story);
+				if (_character.playType == PlayType.byChapter) {
+					string[] characterStrings = GetChaptersStrings (conversationList.stories [0].chapters, false);
 					_character.conversations [i].playOnIndex = EditorGUILayout.Popup ("Play On Chapter", _character.conversations [i].playOnIndex, characterStrings, GUILayout.Width (500));
 				}
 
@@ -488,7 +494,8 @@ public class MainEditor : EditorWindow
 				#region Add Button
 				if (eventTargetType != EventTargetTypes.target) {
 					if (targetObject == null) {
-						GUILayout.Box ("Events");
+
+						DisplayEventTips ();
 
 						GUILayout.BeginHorizontal ();
 
@@ -584,6 +591,7 @@ public class MainEditor : EditorWindow
 							Redraw ();
 							return;
 						}
+
 						SerializedProperty sProp = sObject.FindProperty ("conversationEvents").GetArrayElementAtIndex (currentConversation);
 
 						sObject.Update ();
@@ -595,6 +603,7 @@ public class MainEditor : EditorWindow
 							if (it.name == "conversationEventPage")
 								break;
 						}
+
 						//Debug.Log ("finished searchign for conversation events page");
 						chatScript.onStartObject = sObject;
 						chatScript.onStartObject.Update ();
@@ -623,11 +632,24 @@ public class MainEditor : EditorWindow
 
 				//Show pages
 				//Very awkward here
-				GUILayout.BeginHorizontal ();
+
+
+				GUILayout.BeginHorizontal (EditorStyles.helpBox);
 				GUILayout.Space (20);
 
 				DisplayPageList (_character.conversations [i]);
 				GUILayout.EndHorizontal ();
+
+
+				/*
+				 * 				using (var horizontalScope = new GUILayout.HorizontalScope ("box")) {
+					GUILayout.Space (20);
+					DisplayPageList (_character.conversations [i]);
+					horizontalScope.Dispose ();
+				}
+				 * 
+				 * */
+
 			}
 
 
@@ -922,23 +944,6 @@ public class MainEditor : EditorWindow
 			targetObject = EditorGUILayout.ObjectField (targetObject, typeof(GameObject), true) as GameObject;
 			GUILayout.EndHorizontal ();
 
-			//Find it
-			ChatEventObject[] allEventCharacters = GameObject.FindObjectsOfType<ChatEventObject> ();
-
-			/*
-			List<GameObject> targets = new List<GameObject> ();
-
-			foreach (ChatEventObject g in allEventCharacters) {
-				if (g.characterIndex == characterIndex)
-					targets.Add (g.gameObject);
-			}
-
-
-			if (targets.Count != 0)
-				targetObject = targets [0];
-			else
-				targetObject = null;
-				*/
 			FindTarget ();
 
 			if (targetObject == null || !targetObject.activeInHierarchy) {
@@ -1022,6 +1027,10 @@ public class MainEditor : EditorWindow
 	{
 
 		if (targetObject != null) {
+
+			if (!targetObject.GetComponent<ChatEventObject> ()) {
+				targetObject = null;
+			}
 
 			if (targetObject.GetComponent<ChatEventObject> ().characterIndex != characterIndex || targetObject.GetComponent<ChatEventObject> ().assetType != assetType) {
 				targetObject = null;

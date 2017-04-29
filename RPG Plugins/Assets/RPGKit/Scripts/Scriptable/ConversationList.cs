@@ -98,7 +98,7 @@ public class ConversationList : ScriptableObject
 public enum PlayType
 {
 	byOrder,
-	byEvent,
+	byChapter,
 	byRandom
 }
 

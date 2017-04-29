@@ -96,13 +96,15 @@ public class ChatInspectorDrawer : Editor
 				//Debug.Log (listOfSameCharacters.Count + " " + conversationList.characters [myTarget.characterIndex].name + " in scene");
 			} else
 				myTarget.name = "none";
-			
-			//This is the second more later one
-			if (listOfSameCharacters.Count >= 2) {
-				for (int i = 0; i < listOfSameCharacters.Count; i++) {
-					if (listOfSameCharacters [i] != myTarget) {
-						myTarget.conversationEvents = listOfSameCharacters [i].conversationEvents;
-						break;
+
+			if (myTarget.assetType == AssetType.character) {
+				//This is the second more later one
+				if (listOfSameCharacters.Count >= 2) {
+					for (int i = 0; i < listOfSameCharacters.Count; i++) {
+						if (listOfSameCharacters [i] != myTarget) {
+							myTarget.conversationEvents = listOfSameCharacters [i].conversationEvents;
+							break;
+						}
 					}
 				}
 			}
